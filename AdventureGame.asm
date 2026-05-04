@@ -71,7 +71,7 @@ POTION_REWARD   equ 2          ; add 2 potions on kill
     FightDmg1   db    "  Enemy HP  : ",0
     FightDmg2   db    "  Your HP   : ",0
     FightNewLn  db 10,0
-    EnemyDead   db 10,"  The enemy has fallen!",10,0
+    EnemyDead   db 10,"  Enemy Defeated",10,0
     FightNone   db 10,"  No enemy here. Nothing to fight.",10,0
     PotReward1  db    "  You find ",0
     PotReward2  db " potions on the enemy!",10,0
@@ -105,11 +105,11 @@ POTION_REWARD   equ 2          ; add 2 potions on kill
     ; WIN / LOSE
     WinMsg1     db 10,"================================================",10,0
     WinMsg2     db    "   YOU CLEARED ALL 3 ROOMS!  YOU WIN!",10,0
-    WinMsg3     db    "================================================",10,10,0
+
 
 
     LoseMsg1    db 10,"================================================",10,0
-    LoseMsg2    db    "   YOU HAVE FALLEN...  GAME OVER.",10,0
+    LoseMsg2    db    "   YOU DIED...  GAME OVER.",10,0
     LoseMsg3    db    "================================================",10,10,0
 
 
@@ -127,21 +127,24 @@ POTION_REWARD   equ 2          ; add 2 potions on kill
     Rm2Str  db "2",0
     Rm3Str  db "3",0
 
-;===========================================================
-; .DATA?
-;===========================================================
+
+
+
+
 .data?
     Choice      db 8 dup(?)
     InvChoice   db 8 dup(?)
     Dummy       db 8 dup(?)
     NumBuf      db 16 dup(?)
 
-    ; ---- GAME STATE (matches flowchart variables exactly)
-    PlayerHealth dd ?       ; playerhealth
+
+
+    PlayerHealth dd ?      
     RoomCount    dd ?       ; room count / roomMoved
-    EnemyHealth  dd ?       ; enemyhealth
+    EnemyHealth  dd ?       
     PotionCount  dd ?       ; inventory (only item = potion)
     TheresEnemy  dd ?       ; 1 = enemy alive, 0 = cleared
+
 
     hFile        dd ?
     SaveBuf      db 40 dup(?)
@@ -156,9 +159,9 @@ POTION_REWARD   equ 2          ; add 2 potions on kill
 ; CODE
 .code
 
-;-----------------------------------------------------------
-; PrintNum  -  print DWORD in EAX as decimal
-;-----------------------------------------------------------
+
+
+
 PrintNum proc
     invoke dwtoa, eax, addr NumBuf
     invoke StdOut, addr NumBuf
@@ -199,6 +202,8 @@ DrawRoom proc
         invoke StdOut, addr HPSuffix
     .endif
 
+
+
     ; Potion count
     invoke StdOut, addr PotLbl
     mov eax, PotionCount
@@ -206,6 +211,8 @@ DrawRoom proc
     invoke StdOut, addr PotSuffix
 
     invoke StdOut, addr GameFooter
+
+
 
     ; Enemy status
     .if TheresEnemy == 1
@@ -227,6 +234,8 @@ DrawRoom endp
 ;        EBX advanced past token and trailing space
 ;   Copies digit characters into TokBuf until space or null found
 CopyToken proc
+
+
     push edi
     lea edi, TokBuf         ; EDI = destination
 
@@ -576,17 +585,13 @@ GameLoop proc
 
         ;===================================================
         ; [3] INVENTORY
-        ; Flowchart: inventory -> Display current items (potion)
-        ;            -> Get Player Input -> potion / back
-        ;===================================================
+
         .elseif Choice == '3'
             call DoInventory
 
         ;===================================================
         ; [4] SAVE
-        ; Flowchart: save -> Save Game (Write save.txt)
-        ;            -> False arrow loops back to Get Player Input
-        ;===================================================
+
         .elseif Choice == '4'
             call SaveGame
             invoke StdOut, addr PressKey
@@ -594,7 +599,7 @@ GameLoop proc
 
         ;===================================================
         ; [5] BACK TO MENU
-        ;===================================================
+
         .elseif Choice == '5'
             invoke StdOut, addr BackMenuMsg
             ret
@@ -626,13 +631,10 @@ start:
         invoke StdOut, addr MenuPrompt
         invoke StdIn,  addr Choice, 8
 
-        ; Flowchart: Get Player Input -> Menu choice
-        ; False arrow loops back to Get Player Input
+
+
 
         ; [1] NEW GAME
-        ; Flowchart: Initialize player
-        ;   health(100%) / room count(1) /
-        ;   inventory(0 / only item = potion)
         .if Choice == '1'
             mov PlayerHealth, PLAYER_START_HP
             mov RoomCount,    1
@@ -642,7 +644,6 @@ start:
             call GameLoop
 
         ; [2] LOAD GAME
-        ; Flowchart: check if there's Saved file -> True -> Load Saved txt
         .elseif Choice == '2'
             call LoadGame
             invoke StdOut, addr PressKey
@@ -654,7 +655,7 @@ start:
             invoke StdOut, addr ExitMsg
             invoke ExitProcess, 0
 
-        ; False -> loop back to Get Player Input
+
         .else
             invoke StdOut, addr BadInput
             invoke StdOut, addr PressKey
