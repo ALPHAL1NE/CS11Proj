@@ -581,7 +581,6 @@ GameLoop proc
                 .if eax > TOTAL_ROOMS
                     invoke StdOut, addr WinMsg1
                     invoke StdOut, addr WinMsg2
-                    invoke StdOut, addr WinMsg3
                     invoke StdOut, addr PressKey
                     invoke StdIn,  addr Dummy, 4
                     ret         ; back to main menu
