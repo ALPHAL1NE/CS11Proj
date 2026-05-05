@@ -130,7 +130,7 @@ POTION_REWARD   equ 2          ; add 2 potions on kill
 
 
 
-
+;===================================================
 .data?
     Choice      db 8 dup(?)
     InvChoice   db 8 dup(?)
@@ -155,8 +155,7 @@ POTION_REWARD   equ 2          ; add 2 potions on kill
 
 
 
-
-; CODE
+;===================================================
 .code
 
 
@@ -170,12 +169,12 @@ PrintNum endp
 
 
 
-
-
+;===================================================
 ; DrawRoom/Initialize Room
 DrawRoom proc
     invoke ClearScreen
     invoke StdOut, addr GameHeader
+
 
     ; Room N / 3
     invoke StdOut, addr RoomLbl
@@ -188,11 +187,13 @@ DrawRoom proc
     .endif
     invoke StdOut, addr RoomSuffix
 
+
     ; Player HP
     invoke StdOut, addr PHPLbl
     mov eax, PlayerHealth
     call PrintNum
     invoke StdOut, addr HPSuffix
+
 
     ; Enemy HP (only show if enemy alive)
     .if TheresEnemy == 1
@@ -203,7 +204,6 @@ DrawRoom proc
     .endif
 
 
-
     ; Potion count
     invoke StdOut, addr PotLbl
     mov eax, PotionCount
@@ -211,7 +211,6 @@ DrawRoom proc
     invoke StdOut, addr PotSuffix
 
     invoke StdOut, addr GameFooter
-
 
 
     ; Enemy status
@@ -227,7 +226,7 @@ DrawRoom endp
 
 
 
-
+;===================================================
 ; CopyToken
 ;   IN : EBX = pointer to start of token in LoadBuf
 ;   OUT: TokBuf filled with digits, null-terminated
@@ -259,11 +258,13 @@ CopyToken endp
 
 
 
-
+;===================================================
 ; SaveGame
 SaveGame proc
     ; Build save string manually using dwtoa (avoids wsprintf number corruption)
     ; Format: "playerHP roomCount enemyHP potionCount"
+
+
     invoke dwtoa, PlayerHealth, addr SaveBuf
     invoke lstrcat, addr SaveBuf, addr SpaceStr
     invoke dwtoa, RoomCount, addr NumBuf
@@ -296,7 +297,7 @@ SaveGame endp
 
 
 
-
+;===================================================
 ; LoadGame
 LoadGame proc
     invoke CreateFile, addr SaveFileName,
@@ -304,7 +305,8 @@ LoadGame proc
                        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
     mov hFile, eax
 
-    ; Flowchart: check if there's Saved file
+
+    ; check if there's Saved file
     .if eax == INVALID_HANDLE_VALUE
         invoke StdOut, addr LoadFail
         ; fall back: same as new game
@@ -322,26 +324,35 @@ LoadGame proc
 
     lea ebx, LoadBuf        ; EBX walks through the save string
 
+
+    ;===================================================
     ; Token 1: PlayerHealth
     call CopyToken          ; copies digits at EBX into TokBuf, advances EBX
     invoke atodw, addr TokBuf
     mov PlayerHealth, eax
 
+    ;===================================================
     ; Token 2: RoomCount
     call CopyToken
     invoke atodw, addr TokBuf
     mov RoomCount, eax
 
+
+    ;===================================================
     ; Token 3: EnemyHealth
     call CopyToken
     invoke atodw, addr TokBuf
     mov EnemyHealth, eax
 
+
+    ;===================================================
     ; Token 4: PotionCount
     call CopyToken
     invoke atodw, addr TokBuf
     mov PotionCount, eax
 
+
+    ;===================================================
     ; restore TheresEnemy based on loaded EnemyHealth
     .if EnemyHealth > 0
         mov TheresEnemy, 1
@@ -355,9 +366,7 @@ LoadGame endp
 
 
 
-
-
-
+;===================================================
 ; DoFight
 DoFight proc
     ; Flowchart: if theresEnemy == true
@@ -371,7 +380,9 @@ DoFight proc
     invoke StdOut, addr FightHdr
     invoke StdOut, addr FightRound
 
-    ; enemy health -50  (flat 50 damage per fight action)
+
+    ;===================================================
+    ; enemy health -50
     mov eax, EnemyHealth
     .if eax > 50
         sub eax, 50
@@ -380,7 +391,7 @@ DoFight proc
     .endif
     mov EnemyHealth, eax
 
-    ; player health -30  (flat 30 damage per fight action)
+    ; player health -30  (30 damage per fight action)
     mov eax, PlayerHealth
     .if eax > 30
         sub eax, 30
@@ -389,6 +400,9 @@ DoFight proc
     .endif
     mov PlayerHealth, eax
 
+
+
+    ;===================================================
     ; show updated HP
     invoke StdOut, addr FightDmg1
     mov eax, EnemyHealth
@@ -400,7 +414,9 @@ DoFight proc
     call PrintNum
     invoke StdOut, addr FightNewLn
 
-    ; Flowchart: if EnemyHealth <= 0 -> enemy defeated
+
+    ;===================================================
+    ;            if EnemyHealth <= 0 -> enemy defeated
     ;            if EnemyHealth > 0  -> return, still alive
     mov eax, EnemyHealth
     .if eax == 0
@@ -436,7 +452,9 @@ DoFight endp
 
 DoInventory proc
     InvLoop:
-        ; Flowchart: Display current items - potion
+
+        ;===================================================
+        ; Display current items - potion
         invoke StdOut, addr InvHeader
         invoke StdOut, addr InvPotLine
         mov eax, PotionCount
@@ -448,7 +466,9 @@ DoInventory proc
         invoke StdOut, addr InvPrompt
         invoke StdIn,  addr InvChoice, 8
 
-        ; Flowchart: potion -> use potion: playerhealth +30
+
+        ;===================================================
+        ; use potion: playerhealth +30
         .if InvChoice == '1'
             .if PotionCount == 0
                 invoke StdOut, addr PotNone
@@ -491,7 +511,7 @@ DoInventory endp
 
 
 
-
+;===================================================
 ; CheckWinLose
 CheckWinLose proc
     ; Flowchart: health<=0 -> End
@@ -531,7 +551,7 @@ GameLoop proc
 
 
 
-
+        ;===================================================
         ; [1] MOVE
         .if Choice == '1'
             .if TheresEnemy == 1
@@ -542,17 +562,21 @@ GameLoop proc
             .else
                 invoke StdOut, addr MoveOk
 
-                ; Flowchart: initialize new enemy
+
+                ;===================================================
+                ; Initialize new enemy
                 mov EnemyHealth, ENEMY_START_HP
                 mov TheresEnemy, 1
 
-                ; Flowchart: add 1 roomMoved count
+                ;===================================================
+                ; RoomCounter
                 inc RoomCount
 
                 invoke StdOut, addr PressKey
                 invoke StdIn,  addr Dummy, 4
 
-                ; Flowchart: if roomMoved >= 3 -> Win (End)
+                ;===================================================
+                ; Win condition
                 mov eax, RoomCount
                 .if eax > TOTAL_ROOMS
                     invoke StdOut, addr WinMsg1
@@ -568,7 +592,7 @@ GameLoop proc
 
 
 
-
+        ;===================================================
         ; [2] FIGHT
 
         .elseif Choice == '2'
